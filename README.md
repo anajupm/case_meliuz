@@ -1,3 +1,5 @@
+# Analisador de Testes A/B de Cashback
+
 Este projeto foi desenvolvido para o case técnico de Estágio em Growth AI-Native do Méliuz.
 
 A proposta é automatizar a análise de testes A/B de cashback. A solução recebe um arquivo CSV, valida os dados, calcula as principais métricas de negócio, analisa as diferenças entre as variantes e gera uma recomendação sobre qual grupo deve ser escalado.
@@ -33,6 +35,7 @@ case_meliuz/
 │   └── tracking.py
 └── tracking/
     └── acompanhamento.csv
+```
 
 ## Instalação
 
@@ -91,6 +94,30 @@ python analisar_teste.py data\dataset_01_parceiroA.csv --nome "Cashback Parceiro
 ```
 
 Para analisar outro teste, basta informar outro arquivo CSV. Não é necessário alterar o código.
+
+## Uso com ferramentas de IA
+
+A solução pode ser acionada por ferramentas como Claude Code ou Cursor.
+O agente deve usar a pipeline Python para realizar os cálculos, evitando
+calcular ou estimar os resultados diretamente pelo modelo.
+
+Exemplo de solicitação:
+
+> Analise o teste presente em `data/dataset_02_parceiroB.csv`,
+> gere o relatório e registre a decisão no acompanhamento.
+
+Comando executado pelo agente:
+
+```bash
+python analisar_teste.py data/dataset_02_parceiroB.csv \
+  --nome "Cashback Parceiro B" \
+  --desc "Teste de porcentagem de cashback"
+
+
+Isso já demonstra a arquitetura:
+
+```text
+linguagem natural → agente → script Python → relatório → tracking
 
 ## Métrica principal
 
@@ -164,6 +191,18 @@ Por isso, não é possível calcular a taxa de conversão nem confirmar diretame
 
 A análise considera a premissa de que as variantes tiveram exposição comparável.
 
+## Resultados
+
+| Parceiro | Decisão |
+|---|---|
+| Parceiro A | Teste inválido — não escalar |
+| Parceiro B | Escalar Grupo 1 |
+| Parceiro C | Escalar Grupo 1 |
+
+Os relatórios completos estão disponíveis na pasta [`reports`](reports/).
+O acompanhamento consolidado está em
+[`tracking/acompanhamento.csv`](tracking/acompanhamento.csv).
+
 ## Tecnologias utilizadas
 
 - Python;
@@ -171,3 +210,4 @@ A análise considera a premissa de que as variantes tiveram exposição compará
 - SciPy;
 - CSV;
 - Google Sheets, como integração opcional.
+
