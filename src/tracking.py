@@ -1,9 +1,12 @@
 import csv
 import os
+from datetime import datetime
+
+import pandas as pd
 
 import pipeline as p
 
-# Column order of the tracking sheet (first four are the required minimum).
+
 FIELDS = [
     "nome_teste",
     "descricao",
@@ -14,73 +17,106 @@ FIELDS = [
     "variantes",
     "metrica_primaria",
     "vencedor",
+    "teste_valido",
     "significativo",
-    "p_valor",
+    "p_valor_ajustado",
     "data_analise",
 ]
 
 
-def build_row(df, decision: dict, test_name: str, description: str = "") -> dict:
-    """Assemble one tracking row from the decision output."""
-    from datetime import datetime
+def build_row(
+    df: pd.DataFrame,
+    decision: dict,
+    test_name: str,
+    description: str = "",
+) -> dict:
     partner = str(df[p.COL_PARTNER].iloc[0])
     start = df[p.COL_DATE].min().date()
     end = df[p.COL_DATE].max().date()
-    pw = decision["pairwise_test"]
+    pairwise = decision.get("pairwise_test")
 
-    # "resultado" = human summary of the outcome; "decisao" = the action taken.
-    if decision["significant"]:
-        resultado = (f"{decision['winner']} lidera em "
-                     f"{decision['primary_metric']} com significancia "
-                     f"(p={pw['p_value']:.4g})")
+    if decision.get("valid_test", False):
+        result = decision["recommendation"]
+        p_adjusted = (
+            "" if pairwise is None
+            else f"{pairwise['p_value_adjusted']:.6g}"
+        )
     else:
-        resultado = (f"{decision['winner']} lidera no ponto estimado, sem "
-                     f"significancia sobre {decision['runner_up']} "
-                     f"(p={pw['p_value']:.4g})")
+        result = "Experimento inválido: " + "; ".join(
+            decision.get("recommendation", "").split("; ")
+        )
+        p_adjusted = ""
 
     return {
         "nome_teste": test_name,
         "descricao": description,
-        "resultado": resultado,
+        "resultado": result,
         "decisao": decision["decision"],
         "parceiro": partner,
         "periodo": f"{start} a {end}",
-        "variantes": df[p.COL_GROUP].nunique(),
+        "variantes": int(df[p.COL_GROUP].nunique()),
         "metrica_primaria": decision["primary_metric"],
-        "vencedor": decision["winner"],
-        "significativo": "sim" if decision["significant"] else "nao",
-        "p_valor": f"{pw['p_value']:.4g}",
+        "vencedor": decision.get("winner") or "",
+        "teste_valido": (
+            "sim" if decision.get("valid_test", False) else "nao"
+        ),
+        "significativo": (
+            "sim" if decision.get("significant", False) else "nao"
+        ),
+        "p_valor_ajustado": p_adjusted,
         "data_analise": datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
 
 
-def append_to_csv(row: dict, csv_path: str) -> str:
-    """Append a row to the tracking CSV, writing the header if new."""
+def upsert_csv(row: dict, csv_path: str) -> str:
+    """Insere ou substitui a mesma combinação nome/parceiro/período."""
     os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
-    is_new = not os.path.exists(csv_path)
-    with open(csv_path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDS)
-        if is_new:
-            writer.writeheader()
-        writer.writerow(row)
+
+    existing: list[dict] = []
+    if os.path.exists(csv_path):
+        with open(csv_path, newline="", encoding="utf-8") as file:
+            existing = list(csv.DictReader(file))
+
+    key_fields = ("nome_teste", "parceiro", "periodo")
+    row_key = tuple(str(row[field]) for field in key_fields)
+    filtered = [
+        item
+        for item in existing
+        if tuple(str(item.get(field, "")) for field in key_fields) != row_key
+    ]
+    filtered.append({field: row.get(field, "") for field in FIELDS})
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=FIELDS)
+        writer.writeheader()
+        writer.writerows(filtered)
+
     return csv_path
 
 
-def append_to_sheet(row: dict, sheet_id: str, creds_path: str) -> None:
-    """Append the same row to a Google Sheet (optional differential).
+# Alias para compatibilidade com a versão anterior.
+append_to_csv = upsert_csv
 
-    Requires: pip install gspread google-auth, plus a service-account JSON
-    whose email has edit access to the sheet. The creds file must NEVER be
-    committed (see .gitignore).
-    """
-    import gspread
-    from google.oauth2.service_account import Credentials
+
+def append_to_sheet(row: dict, sheet_id: str, creds_path: str) -> None:
+    """Adiciona uma linha ao Google Sheets usando service account."""
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+    except ImportError as exc:
+        raise RuntimeError(
+            "Instale as dependências opcionais: "
+            "pip install gspread google-auth"
+        ) from exc
 
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-    creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
-    ws = gspread.authorize(creds).open_by_key(sheet_id).sheet1
+    credentials = Credentials.from_service_account_file(
+        creds_path,
+        scopes=scopes,
+    )
+    worksheet = gspread.authorize(credentials).open_by_key(sheet_id).sheet1
 
-    # Write the header once, if the sheet is empty.
-    if not ws.get_all_values():
-        ws.append_row(FIELDS)
-    ws.append_row([str(row[f]) for f in FIELDS])
+    if not worksheet.get_all_values():
+        worksheet.append_row(FIELDS)
+
+    worksheet.append_row([str(row.get(field, "")) for field in FIELDS])
