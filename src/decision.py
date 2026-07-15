@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-import pipeline as dc
+import pipeline as p
 
 
 PRIMARY_METRIC = "net_margin"
@@ -206,8 +206,8 @@ def decide(
     label = METRIC_LABELS.get(metric, metric)
 
     wide = df.pivot(
-        index=dc.COL_DATE,
-        columns=dc.COL_GROUP,
+        index=p.COL_DATE,
+        columns=p.COL_GROUP,
         values=metric,
     ).sort_index()
 
@@ -319,8 +319,8 @@ if __name__ == "__main__":
     import json
     import sys
 
-    cleaned, quality = dc.load_and_clean(sys.argv[1])
-    group_metrics = dc.metrics_by_group(cleaned)
+    cleaned, quality = p.load_and_clean(sys.argv[1])
+    group_metrics = p.metrics_by_group(cleaned)
     print(
         json.dumps(
             decide(cleaned, group_metrics, quality),

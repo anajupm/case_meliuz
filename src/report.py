@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-import pipeline as dc
+import pipeline as p
 
 
 def _brl(value: float | None, decimals: int = 0) -> str:
@@ -83,10 +83,10 @@ def build_report(
     quality: dict,
     test_name: str | None = None,
 ) -> str:
-    partner = str(df[dc.COL_PARTNER].iloc[0])
-    start = df[dc.COL_DATE].min().date()
-    end = df[dc.COL_DATE].max().date()
-    n_variants = int(df[dc.COL_GROUP].nunique())
+    partner = str(df[p.COL_PARTNER].iloc[0])
+    start = df[p.COL_DATE].min().date()
+    end = df[p.COL_DATE].max().date()
+    n_variants = int(df[p.COL_GROUP].nunique())
     test_name = test_name or f"Teste de cashback - {partner}"
 
     lines = [

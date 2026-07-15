@@ -73,21 +73,59 @@ def upsert_csv(row: dict, csv_path: str) -> str:
     os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
 
     existing: list[dict] = []
+
     if os.path.exists(csv_path):
-        with open(csv_path, newline="", encoding="utf-8") as file:
-            existing = list(csv.DictReader(file))
+        with open(
+            csv_path,
+            newline="",
+            encoding="utf-8-sig",
+        ) as file:
+            reader = csv.DictReader(file)
+
+            # Normaliza também as linhas antigas para o schema atual.
+            existing = [
+                {
+                    field: item.get(field, "")
+                    for field in FIELDS
+                }
+                for item in reader
+            ]
+
+    # Normaliza a nova linha para conter somente as colunas oficiais.
+    normalized_row = {
+        field: row.get(field, "")
+        for field in FIELDS
+    }
 
     key_fields = ("nome_teste", "parceiro", "periodo")
-    row_key = tuple(str(row[field]) for field in key_fields)
+
+    row_key = tuple(
+        str(normalized_row.get(field, ""))
+        for field in key_fields
+    )
+
     filtered = [
         item
         for item in existing
-        if tuple(str(item.get(field, "")) for field in key_fields) != row_key
+        if tuple(
+            str(item.get(field, ""))
+            for field in key_fields
+        ) != row_key
     ]
-    filtered.append({field: row.get(field, "") for field in FIELDS})
 
-    with open(csv_path, "w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDS)
+    filtered.append(normalized_row)
+
+    with open(
+        csv_path,
+        "w",
+        newline="",
+        encoding="utf-8",
+    ) as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=FIELDS,
+            extrasaction="ignore",
+        )
         writer.writeheader()
         writer.writerows(filtered)
 
