@@ -1,0 +1,4 @@
+nome_teste,descricao,resultado,decisao,parceiro,periodo,variantes,metrica_primaria,vencedor,significativo,p_valor,data_analise
+Cashback Parceiro A,Teste de % de cashback,"Grupo 1 lidera no ponto estimado, sem significancia sobre Grupo 2 (p=0.1315)",INCONCLUSIVO (favorece Grupo 1),Parceiro A,2011-01-01 a 2011-04-02,3,net_margin,Grupo 1,nao,0.1315,2026-07-15 15:51
+Cashback Parceiro B,Teste de % de cashback,Grupo 1 lidera em net_margin com significancia (p=4.629e-13),ESCALAR Grupo 1,Parceiro B,2011-05-01 a 2011-06-30,3,net_margin,Grupo 1,sim,4.629e-13,2026-07-15 15:51
+Cashback Parceiro C,Teste de % de cashback,Grupo 1 lidera em net_margin com significancia (p=2.605e-28),ESCALAR Grupo 1,Parceiro C,2011-07-01 a 2011-08-14,2,net_margin,Grupo 1,sim,2.605e-28,2026-07-15 15:52
