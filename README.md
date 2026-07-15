@@ -36,6 +36,18 @@ case_meliuz/
 
 ## Instalação
 
+Clone o repositório:
+
+```bash
+git clone https://github.com/anajupm/case_meliuz.git
+```
+
+Entre na pasta do projeto:
+
+```bash
+cd case_meliuz
+```
+
 Crie um ambiente virtual:
 
 ```bash
@@ -44,7 +56,7 @@ python -m venv .venv
 
 No Windows:
 
-```bash
+```powershell
 .venv\Scripts\activate
 ```
 
@@ -54,11 +66,13 @@ No Linux ou macOS:
 source .venv/bin/activate
 ```
 
-Depois, instale as dependências:
+Instale as dependências:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+Depois disso, o projeto já estará pronto para execução.
 
 ## Como executar
 
@@ -141,3 +155,19 @@ tracking/acompanhamento.csv
 O arquivo possui uma linha por teste, contendo nome, descrição, resultado, decisão e outras informações da análise.
 
 A solução também possui integração opcional com Google Sheets por meio de uma conta de serviço.
+
+## Limitações
+
+Os datasets informam o número de compradores, mas não o total de usuários expostos a cada variante.
+
+Por isso, não é possível calcular a taxa de conversão nem confirmar diretamente se o tráfego foi distribuído de maneira equilibrada entre os grupos.
+
+A análise considera a premissa de que as variantes tiveram exposição comparável.
+
+## Tecnologias utilizadas
+
+- Python;
+- pandas;
+- SciPy;
+- CSV;
+- Google Sheets, como integração opcional.

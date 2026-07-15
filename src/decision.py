@@ -7,7 +7,8 @@ from scipy import stats
 
 import pipeline as p
 
-
+# A margem líquida representa o valor retido pelo Méliuz
+# após o pagamento do cashback.
 PRIMARY_METRIC = "net_margin"
 ALPHA = 0.05
 
@@ -51,7 +52,9 @@ def _holm_adjust(p_values: list[float]) -> list[float]:
 
     return adjusted
 
-
+# As variantes são observadas nas mesmas datas.
+# Por isso, a comparação é pareada para reduzir efeitos
+# comuns de sazonalidade e variação diária.
 def _paired_comparison(
     wide: pd.DataFrame,
     group_a: str,
